@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Filter Keys MTG</title>
+
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2rem;
+        font-family: sans-serif;
+        background-color: honeydew;
+      }
+
+      label {
+        display: block;
+        background-color: crimson;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 400px;
+        text-align: center;
+        font-family: sans-serif;
+        font-size: 22px;
+        cursor: pointer;
+      }
+      input {
+        display: none;
+      }
+
+      .textareas {
+        display: flex;
+        width: 80%;
+        gap: 1rem;
+      }
+
+      textarea {
+        width: 50%;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>E vamos de converter cartinha</h1>
+
+    <label for="fileInput">Enviar arquivo</label>
+    <input type="file" id="fileInput" />
+
+    <div class="textareas">
+      <textarea name="json" id="jsonOutput" rows="30" readonly></textarea>
+      <textarea name="json" id="csvOutput" rows="30" readonly></textarea>
+    </div>
+
+    <script>
+      // get data from user
+
+      const filterCardsData = (cards) =>
+        cards.map(
+          ({
+            colors,
+            manaCost,
+            manaValue,
+            name,
+            layout,
+            text,
+            type,
+            types,
+            number,
+            uuid,
+            rarity,
+            setCode,
+          }) => ({
+            colors,
+            manaCost,
+            manaValue,
+            name,
+            layout,
+            text,
+            type,
+            types,
+            number,
+            uuid,
+            rarity,
+            setCode,
+          })
+        );
+
+      const jsonToCsv = (json) => {
+        const replacer = (_key, value) => (value === null ? "" : value); // specify how you want to handle null values here
+        const header = Object.keys(json[0]);
+        const separator = "|";
+        const csv = [
+          header.join(separator), // header row first
+          ...json.map((row) =>
+            header.map((fieldName) => JSON.stringify(row[fieldName], replacer)).join(separator)
+          ),
+        ].join("\r\n");
+        return csv;
+      };
+
+      const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text).then(
+          () => {},
+          (err) => {
+            console.error("Async: Could not copy text: ", err);
+          }
+        );
+      };
+
+      window.addEventListener("load", () => {
+        const upload = document.getElementById("fileInput");
+        const jsonOutput = document.getElementById("jsonOutput");
+        const csvOutput = document.getElementById("csvOutput");
+
+        // Make sure the DOM element exists
+        if (upload) {
+          upload.addEventListener("change", () => {
+            // Make sure a file was selected
+            if (upload.files.length > 0) {
+              const reader = new FileReader(); // File reader to read the file
+
+              // This event listener will happen when the reader has read the file
+              reader.addEventListener("load", () => {
+                const result = JSON.parse(reader.result);
+                const filteredCards = filterCardsData(result.data.cards);
+                jsonOutput.value = JSON.stringify(filteredCards, null, 4);
+                console.log(filteredCards);
+                const csvData = jsonToCsv(filteredCards);
+                console.log(csvData);
+                csvOutput.value = csvData;
+                copyToClipboard(csvData);
+              });
+
+              reader.readAsText(upload.files[0]); // Read the uploaded file
+            }
+          });
+        }
+      });
+    </script>
+  </body>
+</html>
